@@ -103,11 +103,10 @@ class Loop:
         time = math.ceil(time / self.interval) * self.interval
         next_iteration = datetime.datetime.fromtimestamp(time) - now
         seconds_to_sleep = (next_iteration).total_seconds()
-        if not self.interval <= 60:
-            if hasattr(self.cogsutils.cog, "log"):
-                self.cogsutils.cog.log.debug(
-                    f"Sleeping for {seconds_to_sleep} seconds until {self.name} loop next iteration ({self.iteration_count + 1})..."
-                )
+        if self.interval > 60 and hasattr(self.cogsutils.cog, "log"):
+            self.cogsutils.cog.log.debug(
+                f"Sleeping for {seconds_to_sleep} seconds until {self.name} loop next iteration ({self.iteration_count + 1})..."
+            )
         await asyncio.sleep(seconds_to_sleep)
 
     async def loop(self) -> None:
@@ -128,11 +127,10 @@ class Loop:
                         self.cogsutils.cog.log.debug(
                             f"{self.name} initial iteration finished in {total}s ({self.iteration_count})."
                         )
-                    else:
-                        if not self.interval <= 60:
-                            self.cogsutils.cog.log.debug(
-                                f"{self.name} iteration finished in {total}s ({self.iteration_count})."
-                            )
+                    elif self.interval > 60:
+                        self.cogsutils.cog.log.debug(
+                            f"{self.name} iteration finished in {total}s ({self.iteration_count})."
+                        )
             except Exception as e:
                 if hasattr(self.cogsutils.cog, "log"):
                     if self.iteration_count == 1:
@@ -163,7 +161,7 @@ class Loop:
                     self.next_iteration = self.next_iteration.replace(
                         microsecond=0
                     )  # ensure further iterations are on the second
-                if not self.interval == 0:
+                if self.interval != 0:
                     await self.wait_until_iteration()
             else:
                 await self.sleep_until_next()
@@ -174,29 +172,34 @@ class Loop:
         if self.stop_manually:
             self.stop_all()
             return True
-        if self.limit_count is not None:
-            if self.iteration_count >= self.limit_count:
-                self.stop_all()
-                return True
-        if self.limit_date is not None:
-            if datetime.datetime.timestamp(datetime.datetime.now()) >= datetime.datetime.timestamp(
-                self.limit_date
-            ):
-                self.stop_all()
-                return True
-        if self.limit_exception:
-            if self.iteration_exception >= self.limit_exception:
-                self.stop_all()
-                return True
+        if (
+            self.limit_count is not None
+            and self.iteration_count >= self.limit_count
+        ):
+            self.stop_all()
+            return True
+        if self.limit_date is not None and datetime.datetime.timestamp(
+            datetime.datetime.now()
+        ) >= datetime.datetime.timestamp(self.limit_date):
+            self.stop_all()
+            return True
+        if (
+            self.limit_exception
+            and self.iteration_exception >= self.limit_exception
+        ):
+            self.stop_all()
+            return True
         return False
 
     def stop_all(self) -> typing.Any:  # typing_extensions.Self
         self.stop = True
         self.next_iteration = None
         self.task.cancel()
-        if f"{self.name}" in self.cogsutils.loops:
-            if self.cogsutils.loops[f"{self.name}"] == self:
-                del self.cogsutils.loops[f"{self.name}"]
+        if (
+            f"{self.name}" in self.cogsutils.loops
+            and self.cogsutils.loops[f"{self.name}"] == self
+        ):
+            del self.cogsutils.loops[f"{self.name}"]
         if hasattr(self.cogsutils.cog, "log"):
             self.cogsutils.cog.log.debug(
                 f"{self.name} loop has been stopped after {self.iteration_count} iteration(s)."

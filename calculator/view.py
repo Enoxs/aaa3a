@@ -168,7 +168,7 @@ class CalculatorView(discord.ui.View):
     async def on_timeout(self) -> None:
         for child in self.children:
             child: discord.ui.Item
-            if not getattr(child, "style", 0) == discord.ButtonStyle.url:
+            if getattr(child, "style", 0) != discord.ButtonStyle.url:
                 child.disabled = True
         try:
             await self._message.edit(view=self)
@@ -176,12 +176,14 @@ class CalculatorView(discord.ui.View):
             pass
 
     async def _callback(self, interaction: discord.Interaction) -> None:
-        if self._result == _("Error!") or self._result == "∞" or self._result == "":
+        if self._result in [_("Error!"), "∞", ""]:
             self._result = None
-        if self._result is not None:
-            if not interaction.data["custom_id"] == "result_button":
-                self._expression = f"{self._result}|"
-                self._result = None
+        if (
+            self._result is not None
+            and interaction.data["custom_id"] != "result_button"
+        ):
+            self._expression = f"{self._result}|"
+            self._result = None
         if (
             self._expression is None
             or self._expression == _("Error!")

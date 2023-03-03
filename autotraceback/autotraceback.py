@@ -62,14 +62,17 @@ class AutoTraceback(commands.Cog):
         if ctx.bot._last_exception:
             _last_exception = ctx.bot._last_exception.split("\n")
             _last_exception[0] = _last_exception[0] + (
-                ":\n" if not _last_exception[0].endswith(":") else ""
+                "" if _last_exception[0].endswith(":") else ":\n"
             )
             _last_exception = "\n".join(_last_exception)
             _last_exception = self.cogsutils.replace_var_paths(_last_exception)
             if public:
-                pages = []
-                for page in pagify(_last_exception, shorten_by=15, page_length=1985):
-                    pages.append(box(page, lang="py"))
+                pages = [
+                    box(page, lang="py")
+                    for page in pagify(
+                        _last_exception, shorten_by=15, page_length=1985
+                    )
+                ]
                 try:
                     await Menu(pages=pages, timeout=180, delete_after_timeout=False).start(ctx)
                 except discord.HTTPException:
@@ -98,9 +101,10 @@ class AutoTraceback(commands.Cog):
             traceback.format_exception(type(error), error, error.__traceback__)
         )
         traceback_error = self.cogsutils.replace_var_paths(traceback_error)
-        pages = []
-        for page in pagify(traceback_error, shorten_by=15, page_length=1985):
-            pages.append(box(page, lang="py"))
+        pages = [
+            box(page, lang="py")
+            for page in pagify(traceback_error, shorten_by=15, page_length=1985)
+        ]
         try:
             await Menu(pages=pages, timeout=180, delete_after_timeout=False).start(ctx)
         except discord.HTTPException:

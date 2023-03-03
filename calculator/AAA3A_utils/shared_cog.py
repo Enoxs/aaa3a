@@ -163,19 +163,19 @@ class SharedCog(commands.Cog, name="AAA3A_utils"):
             await ctx.tick()
         else:
             message = ""
-            if not result["not_installed_or_loaded"] == []:
+            if result["not_installed_or_loaded"] != []:
                 items = result["not_installed_or_loaded"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Cog{s} not installed or loaded')}: {humanize_list(items)}"
-            if not result["not_from_AAA3A-cogs"] == []:
+            if result["not_from_AAA3A-cogs"] != []:
                 items = result["not_from_AAA3A-cogs"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Cog{s} not from AAA3A-cogs')}: {humanize_list(items)}"
-            if not result["already"] == []:
+            if result["already"] != []:
                 items = result["already"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Cog{s} with slash commands already loaded')} (If they don't appear in Discord, you may have forgotten to sync.): {humanize_list(items)}"
-            if not result["failed"] == []:
+            if result["failed"] != []:
                 items = result["failed"]
                 s = "s" if len(items) > 1 else ""
                 message += (
@@ -191,7 +191,6 @@ class SharedCog(commands.Cog, name="AAA3A_utils"):
         """Remove slash commands for a cog from AAA3A-cogs."""
         if not self.cogsutils.is_dpy2:
             raise commands.UserFeedbackCheckFailure(_("Slash commands do not work under dpy1. Wait for Red 3.5."))
-            return
         async with ctx.typing():
             result = {
                 "not_installed_or_loaded": [],
@@ -230,19 +229,19 @@ class SharedCog(commands.Cog, name="AAA3A_utils"):
             await ctx.tick()
         else:
             message = ""
-            if not result["not_installed_or_loaded"] == []:
+            if result["not_installed_or_loaded"] != []:
                 items = result["not_installed_or_loaded"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Cog{s} not installed or loaded')}: {humanize_list(items)}"
-            if not result["not_from_AAA3A-cogs"] == []:
+            if result["not_from_AAA3A-cogs"] != []:
                 items = result["not_from_AAA3A-cogs"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Cog{s} not from AAA3A-cogs')}: {humanize_list(items)}"
-            if not result["already"] == []:
+            if result["already"] != []:
                 items = result["already"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Cog{s} with slash commands already unloaded')} (If they appear in Discord, you may have forgotten to sync.): {humanize_list(items)}"
-            if not result["failed"] == []:
+            if result["failed"] != []:
                 items = result["failed"]
                 s = "s" if len(items) > 1 else ""
                 message += (
@@ -294,19 +293,19 @@ class SharedCog(commands.Cog, name="AAA3A_utils"):
             await ctx.tick()
         else:
             message = ""
-            if not result["not_exist"] == []:
+            if result["not_exist"] != []:
                 items = result["not_exist"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Command{s} not existing')}: {humanize_list(items)}"
-            if not result["not_from_AAA3A-cogs"] == []:
+            if result["not_from_AAA3A-cogs"] != []:
                 items = result["not_from_AAA3A-cogs"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Command{s} not from AAA3A-cogs')}: {humanize_list(items)}"
-            if not result["not_root_commands"] == []:
+            if result["not_root_commands"] != []:
                 items = result["not_root_commands"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Command{s} not in root')} (For technical reasons, sub-commands cannot be ignored.): {humanize_list(items)}"
-            if not result["already"] == []:
+            if result["already"] != []:
                 items = result["already"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Command{s} already ignored')} (If they appear in Discord, you may have forgotten to sync.): {humanize_list(items)}"
@@ -356,19 +355,19 @@ class SharedCog(commands.Cog, name="AAA3A_utils"):
             await ctx.tick()
         else:
             message = ""
-            if not result["not_exist"] == []:
+            if result["not_exist"] != []:
                 items = result["not_exist"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Command{s} not existing')}: {humanize_list(items)}"
-            if not result["not_from_AAA3A-cogs"] == []:
+            if result["not_from_AAA3A-cogs"] != []:
                 items = result["not_from_AAA3A-cogs"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Command{s} not from AAA3A-cogs')}: {humanize_list(items)}"
-            if not result["not_root_commands"] == []:
+            if result["not_root_commands"] != []:
                 items = result["not_root_commands"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Command{s} not in root')} (For technical reasons, sub-commands cannot be ignored.): {humanize_list(items)}"
-            if not result["already"] == []:
+            if result["already"] != []:
                 items = result["already"]
                 s = "s" if len(items) > 1 else ""
                 message += f"\n{bold(f'Command{s} already not ignored')} (If they don't appear in Discord, you may have forgotten to add slash commands or sync.): {humanize_list(items)}"
@@ -407,14 +406,14 @@ class SharedCog(commands.Cog, name="AAA3A_utils"):
                 message += f"\n{_level}: {len(logs)}"
             await ctx.send(box(message, lang="py"))
             return
-        if not level == "all":
-            if cog.logs.get(level, None) is None or cog.logs.get(level, None) == []:
-                raise commands.UserFeedbackCheckFailure(_("This cog does not have any log saved for this level."))
+        if level != "all" and (
+            cog.logs.get(level, None) is None or cog.logs.get(level, None) == []
+        ):
+            raise commands.UserFeedbackCheckFailure(_("This cog does not have any log saved for this level."))
         if level == "all":
             data = []
             for _level in cog.logs:
-                for log in cog.logs[_level]:
-                    data.append(log)
+                data.extend(iter(cog.logs[_level]))
         else:
             data = list(cog.logs.get(level))
         result = []
@@ -451,9 +450,7 @@ class SharedCog(commands.Cog, name="AAA3A_utils"):
             raise commands.UserFeedbackCheckFailure(_("This cog is not installed or loaded."))
         if cog.qualified_name not in self.cogsutils.get_all_repo_cogs_objects():
             raise commands.UserFeedbackCheckFailure(_("This cog is not a cog from AAA3A-cogs."))
-        embeds = []
-        for loop in cog.cogsutils.loops.values():
-            embeds.append(loop.get_debug_embed())
+        embeds = [loop.get_debug_embed() for loop in cog.cogsutils.loops.values()]
         await Menu(pages=embeds).start(ctx)
 
     @commands.is_owner()
@@ -530,7 +527,17 @@ class SharedCog(commands.Cog, name="AAA3A_utils"):
                 class FlagsConverter(commands.FlagConverter, prefix="--", delimiter=" "):
                     pass
                 for name, param in params.items():
-                    flag = discord.ext.commands.flags.Flag(name=name, attribute=name, aliases=[], annotation=param.annotation, default=param.default if not param.default == inspect._empty else discord.utils.MISSING, max_args=1, override=False)
+                    flag = discord.ext.commands.flags.Flag(
+                        name=name,
+                        attribute=name,
+                        aliases=[],
+                        annotation=param.annotation,
+                        default=param.default
+                        if param.default != inspect._empty
+                        else discord.utils.MISSING,
+                        max_args=1,
+                        override=False,
+                    )
                     FlagsConverter.__commands_flags__[name] = flag
 
                 keys = [re.escape(k) for k in FlagsConverter.__commands_flags__]
@@ -548,7 +555,9 @@ class SharedCog(commands.Cog, name="AAA3A_utils"):
                 result2 = result1.get_flags()
                 context.kwargs = {name: getattr(result1, name, params[name].default) for name in result2.keys()}
                 if not command.ignore_extra and not view.eof:
-                    raise commands.TooManyArguments('Too many arguments passed to ' + command.qualified_name)
+                    raise commands.TooManyArguments(
+                        f'Too many arguments passed to {command.qualified_name}'
+                    )
 
             # Copied from dpy.
             if not command.enabled:
@@ -592,10 +601,7 @@ class SharedCog(commands.Cog, name="AAA3A_utils"):
                 commands.BadArgument,
                 commands.BadBoolArgument,
             )
-            if ctx.cog is not None:
-                cog = ctx.cog.qualified_name
-            else:
-                cog = "None"
+            cog = ctx.cog.qualified_name if ctx.cog is not None else "None"
             if ctx.command is None:
                 return
             if isinstance(error, IGNORED_ERRORS):

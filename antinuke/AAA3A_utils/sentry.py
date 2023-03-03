@@ -135,9 +135,8 @@ class SentryHelper:
         try:
             if ctx.cog is None:
                 return
-            if not manually:
-                if not self.sentry_enabled:
-                    return False
+            if not manually and not self.sentry_enabled:
+                return False
             hub = await self.get_sentry_hub(ctx.cog)
             if hub is None:
                 return
@@ -201,7 +200,7 @@ class SentryHelper:
             """
             s = re.sub(
                 SNOWFLAKE_REGEX,
-                lambda m: "[SHORTENED-ID-" + str(int(m.group()) >> 22)[-4:] + "]",
+                lambda m: f"[SHORTENED-ID-{str(int(m.group()) >> 22)[-4:]}]",
                 s,
             )
             s = re.sub(IP_V4_REGEX, "IP_V4", s)
@@ -278,8 +277,7 @@ class SentryHelper:
         if not self.ready.is_set():
             await self.ready.wait()
         if cog.qualified_name in self.hubs and not force:
-            hub = self.hubs[cog.qualified_name]
-            return hub
+            return self.hubs[cog.qualified_name]
         if getattr(cog, "__version__", None) is None and getattr(cog, "__commit__", None) is None:
             try:
                 nb_commits, version, commit = await self.cogsutils.get_cog_version(cog)

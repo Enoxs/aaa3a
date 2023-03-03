@@ -36,29 +36,26 @@ def generate_key(
         "punctuation": False,
         "others": [],
     },
-) -> str:  # same in CogsUtils
+) -> str:    # same in CogsUtils
     """
     Generate a secret key, with the choice of characters, the number of characters and a list of existing keys.
     """
     strings = []
-    if "ascii_lowercase" in strings_used:
-        if strings_used["ascii_lowercase"]:
-            strings += string.ascii_lowercase
-    if "ascii_uppercase" in strings_used:
-        if strings_used["ascii_uppercase"]:
-            strings += string.ascii_uppercase
-    if "digits" in strings_used:
-        if strings_used["digits"]:
-            strings += string.digits
-    if "punctuation" in strings_used:
-        if strings_used["punctuation"]:
-            strings += string.punctuation
-    if "others" in strings_used:
-        if isinstance(strings_used["others"], typing.List):
-            strings += strings_used["others"]
+    if "ascii_lowercase" in strings_used and strings_used["ascii_lowercase"]:
+        strings += string.ascii_lowercase
+    if "ascii_uppercase" in strings_used and strings_used["ascii_uppercase"]:
+        strings += string.ascii_uppercase
+    if "digits" in strings_used and strings_used["digits"]:
+        strings += string.digits
+    if "punctuation" in strings_used and strings_used["punctuation"]:
+        strings += string.punctuation
+    if "others" in strings_used and isinstance(
+        strings_used["others"], typing.List
+    ):
+        strings += strings_used["others"]
     while True:
         # This probably won't turn into an endless loop.
-        key = "".join(choice(strings) for x in range(number))
+        key = "".join(choice(strings) for _ in range(number))
         if key not in existing_keys:
             return key
 
@@ -99,7 +96,7 @@ class ConfirmationAskView(discord.ui.View):
         if not self.delete_after_timeout:
             for child in self.children:
                 child: discord.ui.Item
-                if not getattr(child, "style", 0) == discord.ButtonStyle.url:
+                if getattr(child, "style", 0) != discord.ButtonStyle.url:
                     child.disabled = True
             try:
                 await self._message.edit(view=self)
@@ -138,9 +135,7 @@ class ConfirmationAskView(discord.ui.View):
         """
         self._message = await self.ctx.send(*args, **kwargs, view=self)
         task_result = await self.wait()
-        if task_result is True or self._result is None:  # timeout
-            return None
-        return self._result
+        return None if task_result is True or self._result is None else self._result
 
 
 class Buttons(discord.ui.View):
@@ -188,9 +183,8 @@ class Buttons(discord.ui.View):
         for button_dict in buttons:
             if "style" not in button_dict:
                 button_dict["style"] = discord.ButtonStyle(2)
-            else:
-                if isinstance(button_dict["style"], int):
-                    button_dict["style"] = discord.ButtonStyle(button_dict["style"])
+            elif isinstance(button_dict["style"], int):
+                button_dict["style"] = discord.ButtonStyle(button_dict["style"])
             if "disabled" not in button_dict:
                 button_dict["disabled"] = False
             if "label" not in button_dict and "emoji" not in button_dict:
@@ -220,18 +214,16 @@ class Buttons(discord.ui.View):
         return cls(**buttons_dict_instance)
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if self.members is not None:
-            if interaction.user.id not in self.members:
-                await interaction.response.send_message(
-                    "You are not allowed to use this interaction.", ephemeral=True
-                )
-                return False
-        if self.check is not None:
-            if not self.check(interaction):
-                await interaction.response.send_message(
-                    "You are not allowed to use this interaction.", ephemeral=True
-                )
-                return False
+        if self.members is not None and interaction.user.id not in self.members:
+            await interaction.response.send_message(
+                "You are not allowed to use this interaction.", ephemeral=True
+            )
+            return False
+        if self.check is not None and not self.check(interaction):
+            await interaction.response.send_message(
+                "You are not allowed to use this interaction.", ephemeral=True
+            )
+            return False
         self.interaction_result = interaction
         if self.function is not None:
             self.function_result = await self.function(self, interaction, **self.function_kwargs)
@@ -336,7 +328,7 @@ class Dropdown(discord.ui.View):
                 custom_id=custom_id,
             )
         elif _type is discord.ComponentType.channel_select or _type is ChannelSelect:
-            if options == [{}] or options == []:
+            if options in [[{}], []]:
                 options = None
             self.dropdown: discord.ui.Select = ChannelSelect(
                 placeholder=placeholder,
@@ -433,18 +425,16 @@ class Dropdown(discord.ui.View):
         return self.interaction_result, self.options_result, self.function_result
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        if self.members is not None:
-            if interaction.user.id not in self.members:
-                await interaction.response.send_message(
-                    "You are not allowed to use this interaction.", ephemeral=True
-                )
-                return False
-        if self.check is not None:
-            if not self.check(interaction):
-                await interaction.response.send_message(
-                    "You are not allowed to use this interaction.", ephemeral=True
-                )
-                return False
+        if self.members is not None and interaction.user.id not in self.members:
+            await interaction.response.send_message(
+                "You are not allowed to use this interaction.", ephemeral=True
+            )
+            return False
+        if self.check is not None and not self.check(interaction):
+            await interaction.response.send_message(
+                "You are not allowed to use this interaction.", ephemeral=True
+            )
+            return False
         self.interaction_result = interaction
         self.options_result = self.dropdown.values
         if self.function is not None:
@@ -617,9 +607,8 @@ class Modal(discord.ui.Modal):
         for input_dict in inputs:
             if "label" not in input_dict:
                 input_dict["label"] = "Test"
-            if "style" in input_dict:
-                if isinstance(input_dict["style"], int):
-                    input_dict["style"] = discord.TextStyle(input_dict["style"])
+            if "style" in input_dict and isinstance(input_dict["style"], int):
+                input_dict["style"] = discord.TextStyle(input_dict["style"])
             input = discord.ui.TextInput(**input_dict)
             self.add_item(input)
             self.inputs.append(input)
@@ -646,18 +635,16 @@ class Modal(discord.ui.Modal):
         return cls(**modal_dict_instance)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        if self.members is not None:
-            if interaction.user.id not in self.members:
-                await interaction.response.send_message(
-                    "You are not allowed to use this interaction.", ephemeral=True
-                )
-                return False
-        if self.check is not None:
-            if not self.check(interaction):
-                await interaction.response.send_message(
-                    "You are not allowed to use this interaction.", ephemeral=True
-                )
-                return False
+        if self.members is not None and interaction.user.id not in self.members:
+            await interaction.response.send_message(
+                "You are not allowed to use this interaction.", ephemeral=True
+            )
+            return False
+        if self.check is not None and not self.check(interaction):
+            await interaction.response.send_message(
+                "You are not allowed to use this interaction.", ephemeral=True
+            )
+            return False
         self.interaction_result = interaction
         self.inputs_result = self.inputs
         if self.function is not None:

@@ -90,9 +90,7 @@ class Reactions:
         predicates = ReactionPredicate.same_context(message=self.message)
         running = True
         try:
-            while True:
-                if not running:
-                    break
+            while running:
                 tasks = [asyncio.create_task(self.bot.wait_for("reaction_add", check=predicates))]
                 done, pending = await asyncio.wait(
                     tasks, timeout=self.timeout, return_when=asyncio.FIRST_COMPLETED
@@ -119,27 +117,22 @@ class Reactions:
                 except discord.HTTPException:
                     pass
 
-        if not str(reaction.emoji) in self.reactions:
+        if str(reaction.emoji) not in self.reactions:
             await remove_reaction(self.remove_reaction, self.message, reaction, user)
             return False
-        if self.members is not None:
-            if user.id not in self.members:
-                await remove_reaction(self.remove_reaction, self.message, reaction, user)
-                return False
-        if self.check is not None:
-            if not self.check(reaction, user):
-                await remove_reaction(self.remove_reaction, self.message, reaction, user)
-                return False
+        if self.members is not None and user.id not in self.members:
+            await remove_reaction(self.remove_reaction, self.message, reaction, user)
+            return False
+        if self.check is not None and not self.check(reaction, user):
+            await remove_reaction(self.remove_reaction, self.message, reaction, user)
+            return False
         await remove_reaction(self.remove_reaction, self.message, reaction, user)
         self.reaction_result = reaction
         self.user_result = user
         if self.function is not None:
             self.function_result = await self.function(self, reaction, user, **self.function_args)
         self.done.set()
-        if self.infinity:
-            return True
-        else:
-            return False
+        return bool(self.infinity)
 
     async def on_timeout(self) -> None:
         self.done.set()
@@ -204,7 +197,7 @@ if discord.version_info.major >= 2:
                 self.pages: typing.List[str] = ["Nothing to show."]
             if isinstance(self.pages, str):
                 self.pages: typing.List[str] = list(pagify(self.pages, page_length=2000 - 10))
-            if box_language_py and all([isinstance(page, str) for page in self.pages]):
+            if box_language_py and all(isinstance(page, str) for page in self.pages):
                 self.pages: typing.List[str] = [box(page, "py") for page in self.pages]
             if not isinstance(self.pages[0], (typing.Dict, discord.Embed, str)):
                 raise RuntimeError("Pages must be of type typing.Dict, discord.Embed or str.")
@@ -225,7 +218,7 @@ if discord.version_info.major >= 2:
                     if name in ["send_interactive"]:
                         del self.controls[emoji]
                         self.disabled_controls.append(name)
-            if not all([isinstance(page, str) for page in self.pages]):
+            if not all(isinstance(page, str) for page in self.pages):
                 for emoji, name in controls.items():
                     if name in ["send_as_file"]:
                         del self.controls[emoji]
@@ -249,16 +242,16 @@ if discord.version_info.major >= 2:
             for button in self.children:
                 if button.custom_id in self.disabled_controls:
                     self.remove_item(button)
-            choose_button: discord.ui.Button = discord.utils.get(self.children, custom_id="choose_page")
-            if choose_button:
+            if choose_button := discord.utils.get(
+                self.children, custom_id="choose_page"
+            ):
                 choose_button.label = f"Page {current + 1}/{len(self.pages)}"
             if self.ephemeral and self.ctx.interaction is not None:
                 kwargs["ephemeral"] = True
             self._message = await ctx.send(**kwargs, view=self)
             for page in self.pages:
-                if isinstance(page, typing.Dict):
-                    if "file" in page:
-                        del page["file"]
+                if isinstance(page, typing.Dict) and "file" in page:
+                    del page["file"]
             return self._message
 
         async def get_page(
@@ -291,8 +284,9 @@ if discord.version_info.major >= 2:
 
         async def change_page(self, interaction: discord.Interaction):
             current, kwargs = await self.get_page(self._current_page)
-            choose_button: discord.ui.Button = discord.utils.get(self.children, custom_id="choose_page")
-            if choose_button:
+            if choose_button := discord.utils.get(
+                self.children, custom_id="choose_page"
+            ):
                 choose_button.label = f"Page {current + 1}/{len(self.pages)}"
             await interaction.response.edit_message(**kwargs, view=self)
 
@@ -309,7 +303,7 @@ if discord.version_info.major >= 2:
             if not self.delete_after_timeout:
                 for child in self.children:
                     child: discord.ui.Item
-                    if not getattr(child, "style", 0) == discord.ButtonStyle.url:
+                    if getattr(child, "style", 0) != discord.ButtonStyle.url:
                         child.disabled = True
                 try:
                     await self._message.edit(view=self)
@@ -354,7 +348,7 @@ if discord.version_info.major >= 2:
         @discord.ui.button(emoji="🔻", custom_id="send_all")
         async def send_all(self, interaction: discord.Interaction, button: discord.ui.Button):
             await interaction.response.defer()
-            for x in range(0, len(self.pages)):
+            for x in range(len(self.pages)):
                 current, kwargs = await self.get_page(x)
                 await interaction.channel.send(**kwargs)
 
@@ -362,12 +356,12 @@ if discord.version_info.major >= 2:
         async def send_interactive(self, interaction: discord.Interaction, button: discord.ui.Button):
             await interaction.response.defer()
             ret = []
-            for x in range(0, len(self.pages)):
+            for x in range(len(self.pages)):
                 current, kwargs = await self.get_page(x)
                 msg = await self.ctx.send(**kwargs)
                 ret.append(msg)
                 n_remaining = len(self.pages) - current
-                if not n_remaining > 0:
+                if n_remaining <= 0:
                     break
                 elif n_remaining == 1:
                     plural = ""
@@ -422,6 +416,9 @@ if discord.version_info.major >= 2:
         @discord.ui.button(label="Page 1/1", custom_id="choose_page")
         async def choose_page(self, interaction: discord.Interaction, button: discord.ui.Button):
 
+
+
+
             class ChoosePageModal(discord.ui.Modal):
                 def __init__(_self):
                     super().__init__(title="Choose page")
@@ -452,7 +449,7 @@ if discord.version_info.major >= 2:
                         return
                     # Min-Max
                     max = len(self.pages)
-                    if not page >= 1 or not page <= max:
+                    if page < 1 or page > max:
                         await interaction.response.send_message(
                             _("The page number must be between 1 and {max}.").format(max=max),
                             ephemeral=True,
@@ -461,6 +458,7 @@ if discord.version_info.major >= 2:
                     # Edit
                     self._current_page = page - 1
                     await self.change_page(interaction)
+
 
             modal = ChoosePageModal()
             await interaction.response.send_modal(modal)
@@ -527,7 +525,7 @@ else:
                 self.pages: typing.List[str] = ["Nothing to show."]
             if isinstance(self.pages, str):
                 self.pages: typing.List[str] = list(pagify(self.pages, page_length=2000 - 10))
-            if box_language_py and all([isinstance(page, str) for page in self.pages]):
+            if box_language_py and all(isinstance(page, str) for page in self.pages):
                 self.pages: typing.List[str] = [box(page, "py") for page in self.pages]
             if not isinstance(self.pages[0], (typing.Dict, discord.Embed, str)):
                 raise RuntimeError("Pages must be of type typing.Dict, discord.Embed or str.")
@@ -545,7 +543,7 @@ else:
                 for emoji, name in controls.items():
                     if name in ["send_interactive"]:
                         del self.controls[emoji]
-            if not all([isinstance(page, str) for page in self.pages]):
+            if not all(isinstance(page, str) for page in self.pages):
                 for emoji, name in controls.items():
                     if name in ["send_as_file"]:
                         del self.controls[emoji]
@@ -603,17 +601,17 @@ else:
                     elif response == "right_page":
                         self.current_page = self.source.get_max_pages() - 1
                     elif response == "send_all":
-                        for x in range(0, len(self.pages)):
+                        for x in range(len(self.pages)):
                             current, kwargs = await self.get_page(x)
                             await ctx.send(**kwargs)
                         continue
                     elif response == "send_interactive":
 
                         async def send_interactive(
-                            timeout: typing.Optional[int] = 15,
-                        ) -> typing.List[discord.Message]:
+                                            timeout: typing.Optional[int] = 15,
+                                        ) -> typing.List[discord.Message]:
                             ret = []
-                            for x in range(0, len(self.pages)):
+                            for x in range(len(self.pages)):
                                 current, kwargs = await self.get_page(x)
                                 msg = await self.ctx.send(**kwargs)
                                 ret.append(msg)
@@ -682,9 +680,8 @@ else:
             current, kwargs = await self.get_page(self.current_page)
             self.message = await ctx.send(**kwargs)
             for page in self.pages:
-                if isinstance(page, typing.Dict):
-                    if "file" in page:
-                        del page["file"]
+                if isinstance(page, typing.Dict) and "file" in page:
+                    del page["file"]
             return self.message
 
         async def get_page(

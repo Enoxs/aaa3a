@@ -21,7 +21,6 @@ from .menus import Menu
 if discord.version_info.major >= 2:
     from .views import Buttons, Modal
 
-if discord.version_info.major >= 2:  # To remove
     setattr(commands, "Literal", typing.Literal)
 
 __all__ = ["Settings", "CustomMessageConverter"]
@@ -199,9 +198,11 @@ class CustomMessageConverter(commands.Converter, dict):
     # Copied from `AAA3A_utils.dev.DevSpace`.
     def __repr__(self) -> str:
         items = [f"{k}={v!r}" for k, v in self.__dict__.items()]
-        if len(items) == 0:
-            return f"<{self.__class__.__name__} [Nothing]>"
-        return f"<{self.__class__.__name__} {' '.join(items)}>"
+        return (
+            f"<{self.__class__.__name__} {' '.join(items)}>"
+            if items
+            else f"<{self.__class__.__name__} [Nothing]>"
+        )
 
     def __eq__(self, other: object) -> bool:
         if isinstance(self, self.__class__) and isinstance(other, self.__class__):
@@ -340,9 +341,8 @@ class Settings:
             if self.cog.cogsutils.is_dpy2:
                 if "style" not in settings[setting]:
                     settings[setting]["style"] = discord.TextStyle.short
-                else:
-                    if isinstance(settings[setting]["style"], int):
-                        settings[setting]["style"] = discord.TextStyle(settings[setting]["style"])
+                elif isinstance(settings[setting]["style"], int):
+                    settings[setting]["style"] = discord.TextStyle(settings[setting]["style"])
         self.settings: typing.Dict[str, typing.Dict[str, typing.Any]] = settings
 
     async def add_commands(self, force: typing.Optional[bool] = False) -> None:
@@ -379,9 +379,8 @@ class Settings:
             # commands_group.description = _help
             commands_group.callback.__doc__ = _help
             commands_group.cog = self.cog
-            if self.cog.cogsutils.is_dpy2:
-                if "ctx" in commands_group.params:
-                    del commands_group.params["ctx"]
+            if self.cog.cogsutils.is_dpy2 and "ctx" in commands_group.params:
+                del commands_group.params["ctx"]
             self.bot.add_command(commands_group)
             cog_commands = list(self.cog.__cog_commands__)
             cog_commands.append(commands_group)
@@ -545,9 +544,8 @@ class Settings:
             self.bot.dispatch("command_add", command)
             if self.bot.get_cog("permissions") is None:
                 command.requires.ready_event.set()
-            if self.cog.cogsutils.is_dpy2:
-                if "ctx" in command.params:
-                    del command.params["ctx"]
+            if self.cog.cogsutils.is_dpy2 and "ctx" in command.params:
+                del command.params["ctx"]
             setattr(self, f"settings_{name}", command)
             cog_commands = list(self.cog.__cog_commands__)
             cog_commands.append(command)
@@ -584,9 +582,9 @@ class Settings:
                 command.__qualname__ = f"{self.cog.qualified_name}.settings_{name}"
                 command: commands.Command = self.commands_group.command(
                     name=name,
-                    usage=(
-                        f"[{_usage}]" if not self.use_profiles_system else f"<profile> [{_usage}]"
-                    ),
+                    usage=f"<profile> [{_usage}]"
+                    if self.use_profiles_system
+                    else f"[{_usage}]",
                     help=_help,
                 )(command)
                 if self.settings[setting]["no_slash"]:
@@ -600,9 +598,8 @@ class Settings:
                 self.bot.dispatch("command_add", command)
                 if self.bot.get_cog("permissions") is None:
                     command.requires.ready_event.set()
-                if self.cog.cogsutils.is_dpy2:
-                    if "ctx" in command.params:
-                        del command.params["ctx"]
+                if self.cog.cogsutils.is_dpy2 and "ctx" in command.params:
+                    del command.params["ctx"]
                 setattr(self, f"settings_{name}", command)
                 cog_commands = list(self.cog.__cog_commands__)
                 cog_commands.append(command)
@@ -713,10 +710,11 @@ class Settings:
         await data.clear_raw(*self.global_path, profile)
         if self.cog.qualified_name == "TicketTool":
             data = await self.cog.config.guild(ctx.guild).tickets.all()
-            to_remove = []
-            for channel in data:
-                if data[channel].get("panel", "main") == profile:
-                    to_remove.append(channel)
+            to_remove = [
+                channel
+                for channel in data
+                if data[channel].get("panel", "main") == profile
+            ]
             for channel in to_remove:
                 try:
                     del data[channel]
@@ -739,10 +737,11 @@ class Settings:
         await data.clear_raw(*self.global_path, old_profile)
         if self.cog.qualified_name == "TicketTool":
             data = await self.cog.config.guild(ctx.guild).tickets.all()
-            to_edit = []
-            for channel in data:
-                if data[channel]["panel"] == old_profile:
-                    to_edit.append(channel)
+            to_edit = [
+                channel
+                for channel in data
+                if data[channel]["panel"] == old_profile
+            ]
             for channel in to_edit:
                 try:
                     data[channel]["panel"] = profile
